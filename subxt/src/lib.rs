@@ -90,6 +90,7 @@ pub use crate::{
         RawEventDetails,
     },
     extrinsic::{
+        CumulusParaExtra,
         DefaultExtra,
         DefaultExtraWithTxPayment,
         PairSigner,

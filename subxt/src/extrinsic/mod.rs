@@ -29,6 +29,7 @@ pub use self::{
         CheckSpecVersion,
         CheckTxVersion,
         CheckWeight,
+        CumulusParaExtra,
         DefaultExtra,
         DefaultExtraWithTxPayment,
         SignedExtra,
