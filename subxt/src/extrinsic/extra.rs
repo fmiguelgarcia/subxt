@@ -479,3 +479,96 @@ where
 ///
 /// Note that this must match the `SignedExtra` type in the target runtime's extrinsic definition.
 pub type DefaultExtra<T> = DefaultExtraWithTxPayment<T, ChargeTransactionPayment<T>>;
+
+/// Default `SignedExtra` for cumulus parachain runtimes.
+#[derive(Derivative, Encode, Decode, TypeInfo)]
+#[derivative(
+    Clone(bound = ""),
+    PartialEq(bound = ""),
+    Debug(bound = ""),
+    Eq(bound = "")
+)]
+#[scale_info(skip_type_params(T))]
+pub struct CumulusParaExtra<T: Config, X> {
+    spec_version: u32,
+    genesis_hash: T::Hash,
+    nonce: T::Index,
+    marker: PhantomDataSendSync<X>,
+}
+
+impl<T, X> SignedExtra<T> for CumulusParaExtra<T, X>
+where
+    T: Config,
+    X: SignedExtension<AccountId = T::AccountId, Call = ()> + Default,
+{
+    type Extra = (
+        CheckSpecVersion<T>,
+        CheckGenesis<T>,
+        CheckMortality<T>,
+        CheckNonce<T>,
+        CheckWeight<T>,
+        X,
+    );
+    type Parameters = ();
+
+    /// Cumulus parachain does not use the `_tx_version`.
+    fn new(
+        spec_version: u32,
+        _tx_version: u32,
+        nonce: T::Index,
+        genesis_hash: T::Hash,
+        _params: Self::Parameters,
+    ) -> Self {
+        ParachainExtraWithTxPayment {
+            spec_version,
+            nonce,
+            genesis_hash,
+            marker: new_PDSS(),
+        }
+    }
+
+    fn extra(&self) -> Self::Extra {
+        (
+            CheckSpecVersion(PhantomDataSendSync::new(), self.spec_version),
+            CheckGenesis(PhantomDataSendSync::new(), self.genesis_hash),
+            CheckMortality(
+                (Era::Immortal, PhantomDataSendSync::new()),
+                self.genesis_hash,
+            ),
+            CheckNonce(self.nonce),
+            CheckWeight(PhantomDataSendSync::new()),
+            X::default(),
+        )
+    }
+}
+
+impl<T, X: SignedExtension<AccountId = T::AccountId, Call = ()> + Default> SignedExtension
+    for CumulusParaExtra<T, X>
+where
+    T: Config,
+    X: SignedExtension,
+{
+    type AccountId = T::AccountId;
+    type AdditionalSigned =
+        <<Self as SignedExtra<T>>::Extra as SignedExtension>::AdditionalSigned;
+    type Call = ();
+    type Pre = ();
+
+    const IDENTIFIER: &'static str = "DefaultExtra";
+
+    fn additional_signed(
+        &self,
+    ) -> Result<Self::AdditionalSigned, TransactionValidityError> {
+        self.extra().additional_signed()
+    }
+
+    fn pre_dispatch(
+        self,
+        _who: &Self::AccountId,
+        _call: &Self::Call,
+        _info: &DispatchInfoOf<Self::Call>,
+        _len: usize,
+    ) -> Result<Self::Pre, TransactionValidityError> {
+        Ok(())
+    }
+}

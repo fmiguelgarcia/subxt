@@ -233,7 +233,7 @@ impl<T: Decode> WrapperKeepOpaque<T> {
 pub struct PhantomDataSendSync<T>(core::marker::PhantomData<T>);
 
 impl<T> PhantomDataSendSync<T> {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self(core::marker::PhantomData)
     }
 }
