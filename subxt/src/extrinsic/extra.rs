@@ -519,11 +519,11 @@ where
         genesis_hash: T::Hash,
         _params: Self::Parameters,
     ) -> Self {
-        ParachainExtraWithTxPayment {
+        Self {
             spec_version,
             nonce,
             genesis_hash,
-            marker: new_PDSS(),
+            marker: PhantomDataSendSync::new(),
         }
     }
 
